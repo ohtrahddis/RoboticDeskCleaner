@@ -1,8 +1,8 @@
 from numpy import *
 from numpy.linalg import *
 
-L1 = 18 #link lengths in cm
-L2 = 19
+L1 = 11 #link lengths in cm
+L2 = 14
 L3 = 9
 L4 = 17 #this will be our z height
 

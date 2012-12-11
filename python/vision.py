@@ -7,7 +7,7 @@ import time
 
 CAMERA_PROPERTIES = {'width':1280, 'height':720}
 EDGE_THRESHOLD = 0.1
-BLOB_AREA_THRESH = 800 #reject blobs smaller than
+BLOB_AREA_THRESH = 700 #reject blobs smaller than
 BINARY = (80,80,80)
 TABLE_LENGTH = 38; #table length in cm
 TABLE_HEIGHT = 27; #table height in cm

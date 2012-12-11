@@ -8,7 +8,7 @@ import subprocess
 class Robot:
     STAY = 'STAY'
     
-    def __init__(self, servo_map, theta0, speed=80, grasp_angle=0, release_angle=30, port="COM36", bps=1000000):
+    def __init__(self, servo_map, theta0, speed=80, grasp_angle=0, release_angle=30, port="COM15", bps=1000000):
         self.port = port
         self.theta0 = theta0
         self.speed = speed
@@ -68,29 +68,23 @@ class Robot:
         return [self.read_pos(i) for i in range(0, self.servo_num)]
 
     def rotate_base(self, angle):
-        move(0, angle)
+        self.move(0, angle)
 
     def rotate_shoulder(self, angle):
-        move(1, angle)
+        self.move(1, angle)
 
     def rotate_elbow(self, angle):
-        move(2, angle)
+        self.move(2, angle)
 
     def rotate_wrist(self, angle):
-        move(3, angle)
+        self.move(3, angle)
 
     def rotate_hand(self, angle):
-        move(4, angle)
+        self.move(4, angle)
 
     def grasp(self, force=1):
-        move(5, self.grasp_angle)
+        self.move(5, self.grasp_angle)
 
     def release(self):
-        move(5, self.release_angle)
+        self.move(5, self.release_angle)
     
-r = Robot([8, 1, 15, 14, 12, 6], [0, 0, 0, 0, 0, 0])
-#r = Robot([8, 1, 15, 14, 12, 6], [0, 90, -90, 0, 0, -30])
-#print r.servos
-    
-r.go_home()
-print r.read_all_pos()
