@@ -1,12 +1,12 @@
 from SimpleCV import *
 from numpy import *
-from nump.linalg import *
+from numpy.linalg import *
 
 import time
 
 CAMERA_PROPERTIES = {'width':1280, 'height':720}
 EDGE_THRESHOLD = 0.1
-BLOB_AREA_THRESH = 700
+BLOB_AREA_THRESH = 800
 BINARY = (80,80,80)
 TABLE_LENGTH = 38; #table length in cm
 TABLE_HEIGHT = 27; #table height in cm
@@ -15,17 +15,17 @@ GPTS = [(0,0), (0,TABLE_HEIGHT), (TABLE_LENGTH,TABLE_HEIGHT), (TABLE_LENGTH,0)] 
 class ImageProcessor:
 
 	def __init__(self):
-		cam = Camera(camera_index=1, prop_set=CAMERA_PROPERTIES)
-		self.camera = Camera(prop_set=CAMERA_PROPERTIES)
-		if cam:
-			self.camera = cam
+		self.camera = Camera(camera_index=1)
 		self.bg = self.camera.getImage()
 
 	def calibrate(self):
 		bg = self.camera.getImage()
 		bg = self.camera.getImage()
 		self.bg = bg.copy()
-		self.bg.show()
+		self.disp = self.bg.show()
+		self.corners = self.get_corners(self.disp)
+		self.H = self.compute_H(self.corners)
+		self.Q = inv(self.H)
 		self.bg = self.bg.binarize(thresh=BINARY)
 		
 	def check(self):
@@ -35,7 +35,7 @@ class ImageProcessor:
 		self.fg.show()
 		self.fg = self.fg.binarize(thresh=BINARY)
 		result = None
-		if self.bg is not None:
+		if self.bg:
 			result = self.fg - self.bg
 			result = result.applyGaussianFilter()
 			#result = result.binarize(thresh=BINARY)
@@ -49,9 +49,19 @@ class ImageProcessor:
 		if blobs is not None:
 			for b in blobs:
 				if b.area() > BLOB_AREA_THRESH:
-					result.append([b.minRectX(), b.minRectY(), b])
+					#bcoord = (b.minRectX(),b.minRectY())
+					bcoord = b.centroid()
+					(x,y) = self.image_to_real(bcoord)
+					w = b.minRectWidth()
+					h = b.minRectHeight()
+					a = b.angle()
+					r = w/h
+					if(r<1):
+						r = 1/r
+					result.append([(x,y), w, h, a, r, b])
 					b.draw()
 					b.drawMinRect(color=Color.CYAN)
+					i.drawCircle(bcoord,3,color=Color.RED,thickness=-1)
 					#blobs[-1].hullImage().show()
 		i.show()
 		return result
@@ -60,6 +70,8 @@ class ImageProcessor:
 	#compute image Homography, ipts is a list of 4 image coords of corners
 	#ipts should be list of tuples [(),(),(),()]
 	def compute_H(self, ipts):
+		
+		print ipts
 		x0 = GPTS[0][0]
 		y0 = GPTS[0][1]
 		x1 = GPTS[1][0]
@@ -93,30 +105,78 @@ class ImageProcessor:
 		h32 = x[7]
 
 		H = array([[h11,h12,h13], [h21,h22,h23], [h31,h32, 1]])
-		self.H = H
+		return H
+	
+	def get_corners(self, disp):
+		corners = []
+		while(disp.isNotDone()):
+			time.sleep(0.001)
+			up = disp.leftButtonUpPosition()
+			if(len(corners)>=4):
+				disp.quit()
+				break
+
+			if(up):
+				corners.append(up)
+		return corners
+
+	def real_to_image(self, coord):
+		x = coord[0]
+		y = coord[1]
+		if self.H.all():
+			H = self.H
+			u = (H[0][0]*x + H[0][1]*y + H[0][2])/(H[2][0]*x + H[2][1]*y + 1)
+			v = (H[1][0]*x + H[1][1]*y + H[1][2])/(H[2][0]*x + H[2][1]*y + 1)
+		return (u,v)
+
+	def image_to_real(self, coord):
+		u = coord[0]
+		v = coord[1]
+		if self.Q.all():
+			Q = self.Q
+			x = (Q[0][0]*u + Q[0][1]*v + Q[0][2])/(Q[2][0]*u + Q[2][1]*v + Q[2][2])
+			y = (Q[1][0]*u + Q[1][1]*v + Q[1][2])/(Q[2][0]*u + Q[2][1]*v + Q[2][2])
+		return (x,y)
+
+def debug():
+	cam = Camera(camera_index=1)
+	img = cam.getImage()
+	disp = img.show()
+	while(disp.isNotDone()):
+		img = cam.getImage()
+		img.save(disp)
+
 def main():
 	ip = ImageProcessor()
 	print "Enter to take Background Image!"
 	sys.stdin.readline()
 	ip.calibrate()
+	print ip.corners
 
 	print "Enter to take Foreground Image!"
 	sys.stdin.readline()
-	#ip.calibrate()
 	res = ip.check()
 	
 	print "Enter to find blobs!"
+	res.show()
 	sys.stdin.readline()
-	#res = ip.check()
 
 	print "Finding Blobs:"
-	objList = ip.find_objects(res)
+	objList = ip.find_objects(res) 
+	#find_objects returns obj in form [(x,y), w, h, angle, ratio, blob]
 	for a in objList:
-		print "({0},{1}) W,H,A: {2},{3},{4}".format(a[0],a[1],a[2].minRectWidth(),a[2].minRectHeight(),a[2].area())
-		#print "(" + str(a[0]) + "," + str(a[1]) + ")" + " W,H,A: "  + str(a[2].minRectWidth()) + "," + str(a[2].minRectHeight() + "," + str(a[2].area()
+		print "(x,y),W,H,A,R: {0}, {1}, {2}, {3}, {4}".format(a[0],a[1],a[2],a[3],a[4])
+
+
 	
 	print "Enter to Quit"
 	sys.stdin.readline()
 	ip = None
 
+
+#Code Entry Point
+try:
+	debug()
+except:
+	print "END DEBUG"
 main()
