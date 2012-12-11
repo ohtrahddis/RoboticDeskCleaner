@@ -1,16 +1,23 @@
 from SimpleCV import *
 from numpy import *
 from numpy.linalg import *
+from IK import *
 
 import time
 
 CAMERA_PROPERTIES = {'width':1280, 'height':720}
 EDGE_THRESHOLD = 0.1
-BLOB_AREA_THRESH = 800
+BLOB_AREA_THRESH = 800 #reject blobs smaller than
 BINARY = (80,80,80)
 TABLE_LENGTH = 38; #table length in cm
 TABLE_HEIGHT = 27; #table height in cm
 GPTS = [(0,0), (0,TABLE_HEIGHT), (TABLE_LENGTH,TABLE_HEIGHT), (TABLE_LENGTH,0)] #ground points clockwise from btm-left
+
+SQUARE_BIN = (10,10)
+RECT_BIN = (15,15)
+STICK_BIN = (20,20)
+MISC_BIN = (25,25)
+TYPE_TO_BIN = {'square': SQUARE_BIN, 'rectangle': RECT_BIN, 'stick': STICK_BIN, 'misc': MISC_BIN}
 
 class ImageProcessor:
 
@@ -52,13 +59,14 @@ class ImageProcessor:
 					#bcoord = (b.minRectX(),b.minRectY())
 					bcoord = b.centroid()
 					(x,y) = self.image_to_real(bcoord)
-					w = b.minRectWidth()
-					h = b.minRectHeight()
-					a = b.angle()
-					r = w/h
-					if(r<1):
-						r = 1/r
-					result.append([(x,y), w, h, a, r, b])
+					width = b.minRectWidth()
+					height = b.minRectHeight()
+					angle = b.angle()
+					ratio = width/height
+					area = b.area()
+					if(ratio<1):
+						ratio = 1/ratio
+					result.append([(x,y), width, height, angle, ratio, area, b])
 					b.draw()
 					b.drawMinRect(color=Color.CYAN)
 					i.drawCircle(bcoord,3,color=Color.RED,thickness=-1)
@@ -138,45 +146,12 @@ class ImageProcessor:
 			y = (Q[1][0]*u + Q[1][1]*v + Q[1][2])/(Q[2][0]*u + Q[2][1]*v + Q[2][2])
 		return (x,y)
 
-def debug():
-	cam = Camera(camera_index=1)
-	img = cam.getImage()
-	disp = img.show()
-	while(disp.isNotDone()):
-		img = cam.getImage()
-		img.save(disp)
+	def categorize(self, ratio):
+		if ratio >= 1 and ratio <= 1.2:
+			return "square"
+		elif ratio > 1.2 and ratio <= 5:
+			return "rectangle"
+		elif ratio > 5:
+			return "stick"
+		return "misc"
 
-def main():
-	ip = ImageProcessor()
-	print "Enter to take Background Image!"
-	sys.stdin.readline()
-	ip.calibrate()
-	print ip.corners
-
-	print "Enter to take Foreground Image!"
-	sys.stdin.readline()
-	res = ip.check()
-	
-	print "Enter to find blobs!"
-	res.show()
-	sys.stdin.readline()
-
-	print "Finding Blobs:"
-	objList = ip.find_objects(res) 
-	#find_objects returns obj in form [(x,y), w, h, angle, ratio, blob]
-	for a in objList:
-		print "(x,y),W,H,A,R: {0}, {1}, {2}, {3}, {4}".format(a[0],a[1],a[2],a[3],a[4])
-
-
-	
-	print "Enter to Quit"
-	sys.stdin.readline()
-	ip = None
-
-
-#Code Entry Point
-try:
-	debug()
-except:
-	print "END DEBUG"
-main()

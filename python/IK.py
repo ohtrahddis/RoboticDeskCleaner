@@ -1,14 +1,17 @@
 from numpy import *
 from numpy.linalg import *
 
-def inversekinematics(x,y,z):
+L1 = 18 #link lengths in cm
+L2 = 19
+L3 = 9
+L4 = 17 #this will be our z height
+
+def inversekinematics(x,y):
+	z = L4 #this positions the end effector so our grippor is at 0 height
 	A0=arctan(y/x)
-	zT=z#height 
+	zT=z #height 
 	wT=sqrt(x**2+y**2)#Distance 
-	L1=8#need to measure
-	L2=8#need to measure
-	L3=2#need to measure
-	AG=radians(-90)
+	AG=radians(0)
 	w2 = wT - L3*cos(AG);
 	z2 = zT - L3*sin(AG);
 	L12 = sqrt(( w2 )**2 + ( z2 )**2);
@@ -22,7 +25,5 @@ def inversekinematics(x,y,z):
 	A1=degrees(A1)
 	A2=degrees(A2)
 	A3=degrees(A3)
-	return A0,A1,A2,A3
+	return [A0,A1,A2,A3]
 
-x=inversekinematics(8,8,0)
-print x
