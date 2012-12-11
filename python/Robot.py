@@ -88,7 +88,8 @@ class Robot:
     def release(self):
         move(5, self.release_angle)
     
-r = Robot([8, 1, 15, 14, 12, 6], [0, 90, -90, 0, 0, -30])
+r = Robot([8, 1, 15, 14, 12, 6], [0, 0, 0, 0, 0, 0])
+#r = Robot([8, 1, 15, 14, 12, 6], [0, 90, -90, 0, 0, -30])
 #print r.servos
     
 r.go_home()
