@@ -4,11 +4,12 @@ import time
 import random
 import sys
 import subprocess
+import math
 
 class Robot:
     STAY = 'STAY'
     
-    def __init__(self, servo_map, theta0, speed=80, grasp_angle=0, release_angle=30, port="COM15", bps=1000000):
+    def __init__(self, servo_map, theta0, speed=80, grasp_angle=10, release_angle=-30, port="COM15", bps=1000000):
         self.port = port
         self.theta0 = theta0
         self.speed = speed
@@ -39,20 +40,20 @@ class Robot:
             servo.moving_speed = self.speed
             servo.synchronized = True
             servo.torque_enable = True
-            servo.torque_limit = 1600
-            servo.max_torque = 1600
+            servo.torque_limit = 800
+            servo.max_torque = 800
 
     def convert_angle(self, deg):
         return int((deg+150.0)/300 * 1024.0)
 
     def move(self, joint, angle):
-        if angle != Robot.STAY:
+        if angle != Robot.STAY and not (math.isnan(angle)):
             self.servos[joint].goal_position = self.convert_angle(angle)
         self.net.synchronize()
 
     def move_all(self, angles):
         for i, angle in enumerate(angles):
-            if angle != Robot.STAY:
+            if angle != Robot.STAY and not (math.isnan(angle)):
                 self.servos[i].goal_position = self.convert_angle(angle)
         self.net.synchronize()
 
