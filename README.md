@@ -3,7 +3,7 @@
 ## About
 Robotic arm to identify, fetch, and sort items on a desk.
 
-[Please see here](http://lycheelabs.org/projects/dummy)
+[Please see here](http://habitat.hackersatberkeley.com/projects/dummy-ig07ij)
 
 ## Examples and Demos
 ###
